@@ -6,8 +6,10 @@ import re
 import sys
 from html.parser import HTMLParser
 from pathlib import Path
+from typing import Any
 
 from .cli import resource, timestamp, validate
+from .observability import init_sentry, report_exit
 
 # CASSINI publishes a "September - October 2026" window for an EU (Brussels-time)
 # programme. As instants: 1 Sep 00:00 CEST (UTC+2) up to 1 Nov 00:00 CET (UTC+1,
@@ -102,7 +104,7 @@ def normalize(raw, source, checked_at):
     # as if it were UTC (or raise TypeError against the aware window bounds).
     now = timestamp(checked_at)
     if source["id"] == "cassini-challenges-2026":
-        required = (
+        required: tuple[str, ...] = (
             "CASSINI Challenges 2026",
             "12 winners get a €100,000 prize award",
             "Technology Readiness Level (TRL) ≥ 5",
@@ -114,11 +116,11 @@ def normalize(raw, source, checked_at):
             raise ValueError("CASSINI source drift or challenge page")
         # The page publishes a September–October application window but no
         # exact timestamp. Keep the deadline unknown rather than inventing one.
-        deadline = {"kind": "unknown", "at": None}
+        deadline: dict[str, Any] = {"kind": "unknown", "at": None}
         opens, ends = timestamp(CASSINI_WINDOW_OPENS), timestamp(CASSINI_WINDOW_ENDS)
         status = "open" if opens <= now < ends else "unknown"
         title = "CASSINI Challenges 2026"
-        countries = []
+        countries: list[str] = []
         eligibility = (
             "Space entrepreneurs using EU Space data or technology must meet the "
             "current CASSINI Rules of contest; the published page describes an MVP "
@@ -233,7 +235,9 @@ def main(argv=None):
 
     if VERSION != 1:
         raise RuntimeError("unsupported shared capture runtime")
-    return run(source_config(selected.source_id), normalize, validate, remaining)
+    source = source_config(selected.source_id)
+    sentry = init_sentry(source["id"])
+    return report_exit(sentry, source["id"], run(source, normalize, validate, remaining))
 
 
 if __name__ == "__main__":
