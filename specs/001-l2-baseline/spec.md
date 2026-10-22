@@ -45,7 +45,7 @@ prints a generic line, so a failing scheduled capture is invisible.
 
 | AC | Red (sha · command · failure) | Green |
 |---|---|---|
-| AC-01, AC-02 | `6b89044` · `python -m pytest -q tests/test_capture_job.py` · `AssertionError: 0 != 1` | `GREEN_CI` |
+| AC-01, AC-02 | `6b89044` · `python -m pytest -q tests/test_capture_job.py` · `AssertionError: 0 != 1` | [CI run](https://github.com/bookchaowalit/opportunity-competition-data/actions/runs/39712359207) (success) |
 
 ## Schedule (no change in this spec)
 
